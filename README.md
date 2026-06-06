@@ -1,1 +1,607 @@
 # TKWSS-Science-Practical
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中學科學科 — 實驗操作試計分平台</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel (用於瀏覽器端解析 JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons (圖標支援) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans pb-12">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 定義簡單的圖標組件，免除外部複雜 import 導致的 GitHub Pages 載入問題
+        const GraduationCapIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/><path d="M21.5 12H16"/></svg>
+        );
+        const UsersIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        );
+        const SaveIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        );
+        const TrashIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        );
+        const RefreshIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M16 3h5v5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 21H3v-5"/></svg>
+        );
+        const SpreadsheetIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+        );
+        const InfoIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        );
+        const ClipboardIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        );
+
+        function App() {
+            // 評分準則清單
+            const scoringCriteria = [
+                { id: 'q1', category: '裝置', num: '1', detail: '玻璃塊的直邊放於量角器的 90°– 90° 線上' },
+                { id: 'q2', category: '裝置', num: '2', detail: '玻璃塊直邊的中心與量角器的中心點重疊' },
+                { id: 'q3', category: '裝置', num: '3', detail: '狹縫板選用「單縫」，並放於合適距離使光束變幼' },
+                { id: 'q4', category: '過程', num: '4', detail: '光線由玻璃塊的「曲面進入」，射向玻璃塊的中心' },
+                { id: 'q5', category: '過程', num: '5', detail: '找臨界角的方法正確 (老師檢查時評分)' },
+                { id: 'q6', category: '完成', num: '6', detail: '折射角數值正確 (A / B / C)' },
+                { id: 'q7', category: '完成', num: '7', detail: '臨界角數值正確' },
+                { id: 'q8', category: '完成', num: '8', detail: '圈出正確答案 (折射線是 90°)' },
+                { id: 'q9', category: '完成', num: '9', detail: '單位正確 (全對：1分 / 部分錯漏或無單位：0分)' },
+                { id: 'q10', category: '完成', num: '10', detail: '考試時間內清理及還原實驗儀器' },
+            ];
+
+            // 班級選項
+            const grades = ['中一 (S1)', '中二 (S2)', '中三 (S3)'];
+            const classes = ['A', 'B', 'C', 'D'];
+            
+            // 生成學號列表 01 - 45
+            const studentNumbers = Array.from({ length: 45 }, (_, i) => {
+                const num = i + 1;
+                return num < 10 ? `0${num}` : `${num}`;
+            });
+
+            // 狀態：目前選擇的班級、老師、日期
+            const [selectedGrade, setSelectedGrade] = useState('中三 (S3)');
+            const [selectedClass, setSelectedClass] = useState('A');
+            const [evaluator, setEvaluator] = useState('');
+            const [examDate, setExamDate] = useState(new Date().toISOString().split('T')[0]);
+
+            // 初始化單一學生的評分資料結構
+            const createEmptyStudentScore = (index) => ({
+                key: index,
+                studentId: '', 
+                scores: {
+                    q1: 0, q2: 0, q3: 0, q4: 0, q5: 0,
+                    q6: 0, q7: 0, q8: 0, q9: 0, q10: 0
+                },
+                deduction: 0, 
+            });
+
+            // 狀態：目前正在評分的 5 位學生
+            const [currentStudents, setCurrentStudents] = useState([
+                createEmptyStudentScore(0),
+                createEmptyStudentScore(1),
+                createEmptyStudentScore(2),
+                createEmptyStudentScore(3),
+                createEmptyStudentScore(4),
+            ]);
+
+            // 狀態：已儲存的歷史紀錄 (全班成績)
+            const [savedRecords, setSavedRecords] = useState([]);
+            
+            // 提示訊息狀態
+            const [alertMessage, setAlertMessage] = useState(null);
+
+            const showAlert = (text, type = 'success') => {
+                setAlertMessage({ text, type });
+                setTimeout(() => {
+                    setAlertMessage(null);
+                }, 4000);
+            };
+
+            // 計算特定學生的總分
+            const calculateTotalScore = (student) => {
+                const sumOfCriteria = Object.values(student.scores).reduce((a, b) => a + b, 0);
+                const finalScore = sumOfCriteria - student.deduction;
+                return Math.max(0, finalScore);
+            };
+
+            const handleStudentIdChange = (index, value) => {
+                const updated = [...currentStudents];
+                updated[index].studentId = value;
+                setCurrentStudents(updated);
+            };
+
+            const handleScoreChange = (studentIndex, criteriaId, val) => {
+                const updated = [...currentStudents];
+                updated[studentIndex].scores[criteriaId] = val;
+                setCurrentStudents(updated);
+            };
+
+            const adjustDeduction = (studentIndex, amount) => {
+                const updated = [...currentStudents];
+                const currentDeduction = updated[studentIndex].deduction;
+                updated[studentIndex].deduction = Math.max(0, currentDeduction + amount);
+                setCurrentStudents(updated);
+            };
+
+            const setAllScoresForStudent = (studentIndex, value) => {
+                const updated = [...currentStudents];
+                Object.keys(updated[studentIndex].scores).forEach(key => {
+                    updated[studentIndex].scores[key] = value;
+                });
+                setCurrentStudents(updated);
+            };
+
+            const clearRatingBoard = () => {
+                if (window.confirm("確定要清空目前5位學生的評分面板嗎？已儲存的歷史成績不會被刪除。")) {
+                    setCurrentStudents([
+                        createEmptyStudentScore(0),
+                        createEmptyStudentScore(1),
+                        createEmptyStudentScore(2),
+                        createEmptyStudentScore(3),
+                        createEmptyStudentScore(4),
+                    ]);
+                    showAlert("已成功重設評分面板！", "info");
+                }
+            };
+
+            const saveCurrentBatch = () => {
+                const activeStudents = currentStudents.filter(s => s.studentId !== '');
+                if (activeStudents.length === 0) {
+                    showAlert("儲存失敗：請至少選擇一位學生的學號！", "error");
+                    return;
+                }
+
+                const ids = activeStudents.map(s => s.studentId);
+                const hasDuplicate = ids.some((val, i) => ids.indexOf(val) !== i);
+                if (hasDuplicate) {
+                    showAlert("儲存失敗：本批次中含有重複的學號，請檢查！", "error");
+                    return;
+                }
+
+                const newRecords = activeStudents.map(student => {
+                    const criteriaScores = { ...student.scores };
+                    const total = calculateTotalScore(student);
+                    return {
+                        id: `${selectedGrade}-${selectedClass}-${student.studentId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                        grade: selectedGrade,
+                        className: selectedClass,
+                        studentId: student.studentId,
+                        scores: criteriaScores,
+                        deduction: student.deduction,
+                        totalScore: total,
+                        evaluator: evaluator || '未填寫',
+                        date: examDate
+                    };
+                });
+
+                const duplicatesInSaved = newRecords.filter(nr => 
+                    savedRecords.some(sr => sr.grade === nr.grade && sr.className === nr.className && sr.studentId === nr.studentId)
+                );
+
+                if (duplicatesInSaved.length > 0) {
+                    const duplicateIds = duplicatesInSaved.map(d => `學號 ${d.studentId}`).join(', ');
+                    if (!window.confirm(`提示：${duplicateIds} 的成績已在記錄中存在。確定要覆蓋或新增重複數據嗎？`)) {
+                        return;
+                    }
+                }
+
+                setSavedRecords(prev => [...prev, ...newRecords]);
+                showAlert(`成功儲存 ${newRecords.length} 位學生的成績！`, "success");
+
+                setCurrentStudents([
+                    createEmptyStudentScore(0),
+                    createEmptyStudentScore(1),
+                    createEmptyStudentScore(2),
+                    createEmptyStudentScore(3),
+                    createEmptyStudentScore(4),
+                ]);
+            };
+
+            const deleteRecord = (recordId) => {
+                if (window.confirm("確定要刪除這筆成績紀錄嗎？")) {
+                    setSavedRecords(prev => prev.filter(r => r.id !== recordId));
+                    showAlert("已刪除該筆紀錄。", "info");
+                }
+            };
+
+            const clearAllSavedRecords = () => {
+                if (window.confirm("⚠️ 警告：確定要清空所有已儲存的歷史成績嗎？此動作無法復原！")) {
+                    setSavedRecords([]);
+                    showAlert("所有歷史紀錄已清空。", "info");
+                }
+            };
+
+            const exportToExcel = () => {
+                if (savedRecords.length === 0) {
+                    showAlert("沒有已儲存的紀錄可供匯出！", "error");
+                    return;
+                }
+
+                let csvContent = '\uFEFF'; // UTF-8 BOM - 防止 Excel 開啟亂碼
+                const headers = [
+                    '日期', '評核老師', '年級', '班別', '學號',
+                    ...scoringCriteria.map(c => `[${c.category}] Q${c.num}.${c.detail}`),
+                    '其他扣分', '總分(滿分10)'
+                ];
+                csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+
+                savedRecords.forEach(record => {
+                    const row = [
+                        record.date,
+                        record.evaluator,
+                        record.grade,
+                        record.className,
+                        record.studentId,
+                        ...scoringCriteria.map(c => record.scores[c.id]),
+                        record.deduction,
+                        record.totalScore
+                    ];
+                    csvContent += row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',') + '\n';
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${selectedGrade}_${selectedClass}班_科學實驗成績_${examDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showAlert("成績 CSV 匯出成功！已下載至您的裝置。", "success");
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-4 space-y-4">
+                    
+                    {/* 第一部分：基本考務設定 */}
+                    <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mt-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">年級</label>
+                                <select 
+                                    value={selectedGrade} 
+                                    onChange={(e) => setSelectedGrade(e.target.value)}
+                                    className="w-full rounded border-slate-200 border p-1.5 bg-white text-slate-800 focus:ring-1 focus:ring-blue-500 text-xs"
+                                >
+                                    {grades.map(g => <option key={g} value={g}>{g}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">班別</label>
+                                <select 
+                                    value={selectedClass} 
+                                    onChange={(e) => setSelectedClass(e.target.value)}
+                                    className="w-full rounded border-slate-200 border p-1.5 bg-white text-slate-800 focus:ring-1 focus:ring-blue-500 text-xs"
+                                >
+                                    {classes.map(c => <option key={c} value={c}>{c} 班</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">評核老師</label>
+                                <input 
+                                    type="text" 
+                                    value={evaluator}
+                                    onChange={(e) => setEvaluator(e.target.value)}
+                                    placeholder="輸入教師姓名" 
+                                    className="w-full rounded border-slate-200 border p-1.5 text-xs focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">評核日期</label>
+                                <input 
+                                    type="date" 
+                                    value={examDate}
+                                    onChange={(e) => setExamDate(e.target.value)}
+                                    className="w-full rounded border-slate-200 border p-1.5 text-xs focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 第二部分：橫向矩陣計分表格 */}
+                    <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div className="flex items-center gap-1.5">
+                                <UsersIcon />
+                                <span className="font-bold text-slate-800 text-sm">實驗評分網格 (同時處理 5 位學員)</span>
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <button
+                                    onClick={clearRatingBoard}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
+                                >
+                                    <RefreshIcon />
+                                    重設面板
+                                </button>
+                                <button
+                                    onClick={saveCurrentBatch}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm"
+                                >
+                                    <SaveIcon />
+                                    儲存本組 (5人)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full table-fixed min-w-[900px] border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-100 border-b border-slate-200">
+                                        <th className="w-[30%] p-3 text-left font-bold text-slate-600 text-xs">評分項目與準則</th>
+                                        {currentStudents.map((student, sIdx) => (
+                                            <th key={student.key} className={`w-[14%] p-3 text-center border-l border-slate-200 transition-colors ${student.studentId ? 'bg-blue-50/50' : 'bg-slate-100'}`}>
+                                                <div className="space-y-1.5">
+                                                    <div className="text-xs font-bold text-slate-500">學生 {sIdx + 1}</div>
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <span className="text-[10px] text-slate-400 font-bold">學號:</span>
+                                                        <select
+                                                            value={student.studentId}
+                                                            onChange={(e) => handleStudentIdChange(sIdx, e.target.value)}
+                                                            className="text-xs font-bold rounded border border-slate-300 px-1 py-0.5 bg-white text-slate-800 focus:outline-none"
+                                                        >
+                                                            <option value="">--</option>
+                                                            {studentNumbers.map(num => (
+                                                                <option key={num} value={num}>{num} 號</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    {student.studentId && (
+                                                        <div className="flex justify-center gap-1 text-[9px] pt-1">
+                                                            <button 
+                                                                onClick={() => setAllScoresForStudent(sIdx, 1)}
+                                                                className="bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 px-1 rounded transition font-semibold"
+                                                            >全對</button>
+                                                            <button 
+                                                                onClick={() => setAllScoresForStudent(sIdx, 0)}
+                                                                className="bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 px-1 rounded transition font-semibold"
+                                                            >全錯</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {scoringCriteria.map((criterion, cIdx) => (
+                                        <tr key={criterion.id} className="hover:bg-slate-50/60 transition-colors">
+                                            <td className="p-2.5 text-xs">
+                                                <div className="flex items-start gap-1.5">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5 ${
+                                                        criterion.category === '裝置' ? 'bg-purple-100 text-purple-800' :
+                                                        criterion.category === '過程' ? 'bg-amber-100 text-amber-800' :
+                                                        'bg-indigo-100 text-indigo-800'
+                                                    }`}>
+                                                        {criterion.category} Q{criterion.num}
+                                                    </span>
+                                                    <p className="text-slate-700 font-medium leading-normal">{criterion.detail}</p>
+                                                </div>
+                                            </td>
+                                            {currentStudents.map((student, sIdx) => {
+                                                const isSelected0 = student.scores[criterion.id] === 0;
+                                                const isSelected1 = student.scores[criterion.id] === 1;
+                                                const hasId = student.studentId !== '';
+                                                return (
+                                                    <td key={student.key} className={`p-2 border-l border-slate-200 text-center transition-colors ${hasId ? 'bg-blue-50/10' : 'bg-slate-50/30'}`}>
+                                                        <div className="flex justify-center items-center gap-1.5">
+                                                            <button
+                                                                type="button"
+                                                                disabled={!hasId}
+                                                                onClick={() => handleScoreChange(sIdx, criterion.id, 0)}
+                                                                className={`w-10 py-1 rounded text-xs font-bold border transition ${
+                                                                    !hasId ? 'bg-slate-50 text-slate-200 border-slate-100 cursor-not-allowed' :
+                                                                    isSelected0 ? 'bg-rose-500 text-white border-rose-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                                                                }`}
+                                                            >0</button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!hasId}
+                                                                onClick={() => handleScoreChange(sIdx, criterion.id, 1)}
+                                                                className={`w-10 py-1 rounded text-xs font-bold border transition ${
+                                                                    !hasId ? 'bg-slate-50 text-slate-200 border-slate-100 cursor-not-allowed' :
+                                                                    isSelected1 ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+                                                                }`}
+                                                            >1</button>
+                                                        </div>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+
+                                    <tr className="bg-amber-50/30">
+                                        <td className="p-2.5 text-xs">
+                                            <div className="flex items-start gap-1.5">
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5 bg-amber-200 text-amber-900">其他扣分</span>
+                                                <div>
+                                                    <p className="font-bold text-amber-900">不安全或粗暴操作儀器扣分</p>
+                                                    <p className="text-[10px] text-slate-500">不安全操作/態度欠佳/不小心或故意損壞 (每項扣 0.5 分)</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        {currentStudents.map((student, sIdx) => {
+                                            const hasId = student.studentId !== '';
+                                            return (
+                                                <td key={student.key} className="p-2 border-l border-slate-200 text-center">
+                                                    {hasId ? (
+                                                        <div className="flex items-center justify-center gap-1 max-w-[110px] mx-auto">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => adjustDeduction(sIdx, -0.5)}
+                                                                disabled={student.deduction <= 0}
+                                                                className="px-1 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold"
+                                                            >-</button>
+                                                            <span className="text-xs font-bold text-amber-700 min-w-[28px]">-{student.deduction}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => adjustDeduction(sIdx, 0.5)}
+                                                                className="px-1 py-0.5 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold"
+                                                            >+</button>
+                                                        </div>
+                                                    ) : <span className="text-slate-300 text-xs">-</span>}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+
+                                    <tr className="bg-slate-50 font-bold border-t-2 border-slate-200">
+                                        <td className="p-3 text-right text-xs text-slate-600">即時計算總分 (滿分 10 分)：</td>
+                                        {currentStudents.map((student, sIdx) => {
+                                            const hasId = student.studentId !== '';
+                                            const total = calculateTotalScore(student);
+                                            return (
+                                                <td key={student.key} className="p-3 border-l border-slate-200 text-center">
+                                                    {hasId ? (
+                                                        <div className="text-base font-black">
+                                                            <span className={total >= 6 ? 'text-emerald-600' : 'text-slate-800'}>{total}</span>
+                                                            <span className="text-[10px] text-slate-400 font-semibold ml-0.5">/10</span>
+                                                        </div>
+                                                    ) : <span className="text-slate-300 text-xs">-</span>}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                            <button
+                                onClick={saveCurrentBatch}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors"
+                            >
+                                <SaveIcon />
+                                儲存本組 5 位學生實驗成績
+                            </button>
+                        </div>
+                    </section>
+
+                    {/* 第三部分：歷史成績總表 */}
+                    <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50/50">
+                            <div className="border-l-4 border-emerald-600 pl-2.5">
+                                <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                    <ClipboardIcon />
+                                    3. 本班已儲存歷史成績記錄 ({savedRecords.length} 筆)
+                                </h2>
+                                <p className="text-[11px] text-slate-500">可隨時按「匯出 Excel (CSV)」導出檔案，以便進行學校系統登記。</p>
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <button
+                                    onClick={clearAllSavedRecords}
+                                    disabled={savedRecords.length === 0}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-white border border-rose-200 rounded hover:bg-rose-50 disabled:opacity-40"
+                                >
+                                    <TrashIcon />
+                                    清空本班
+                                </button>
+                                <button
+                                    onClick={exportToExcel}
+                                    disabled={savedRecords.length === 0}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded shadow-sm disabled:opacity-40"
+                                >
+                                    <SpreadsheetIcon />
+                                    匯出 Excel (CSV)
+                                </button>
+                            </div>
+                        </div>
+
+                        {savedRecords.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-xs">
+                                <ClipboardIcon />
+                                <p className="font-semibold mt-2">尚未有任何暫存記錄。</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">點擊上方的「儲存本組 (5人)」即可累積歷史成績。</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                                            <th className="py-2.5 px-3 text-center">年級</th>
+                                            <th className="py-2.5 px-3 text-center">班別</th>
+                                            <th className="py-2.5 px-3 text-center">學號</th>
+                                            <th className="py-2.5 px-2 text-center">10大細項指標得分</th>
+                                            <th className="py-2.5 px-3 text-center">扣分</th>
+                                            <th className="py-2.5 px-3 text-center font-bold text-blue-800">總得分</th>
+                                            <th className="py-2.5 px-3 text-center">評分教師</th>
+                                            <th className="py-2.5 px-3 text-center">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {savedRecords.map((record) => (
+                                            <tr key={record.id} className="hover:bg-slate-50/50">
+                                                <td className="py-2 px-3 text-center">{record.grade}</td>
+                                                <td className="py-2 px-3 text-center font-bold text-slate-700">{record.className}班</td>
+                                                <td className="py-2 px-3 text-center">
+                                                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold text-xs">{record.studentId} 號</span>
+                                                </td>
+                                                <td className="py-2 px-2">
+                                                    <div className="flex justify-center gap-0.5">
+                                                        {scoringCriteria.map(c => {
+                                                            const score = record.scores[c.id];
+                                                            return (
+                                                                <span 
+                                                                    key={c.id} 
+                                                                    className={`w-4 h-4 text-[9px] flex items-center justify-center rounded font-bold ${
+                                                                        score === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                                                    }`}
+                                                                    title={`Q${c.num}.${c.detail}: ${score}分`}
+                                                                >{score}</span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-3 text-center text-amber-600 font-medium">{record.deduction > 0 ? `-${record.deduction}` : '0'}</td>
+                                                <td className="py-2 px-3 text-center">
+                                                    <span className={`px-2 py-0.5 rounded font-black text-xs ${
+                                                        record.totalScore >= 6 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-700'
+                                                    }`}>{record.totalScore} / 10</span>
+                                                </td>
+                                                <td className="py-2 px-3 text-center text-slate-500">{record.evaluator}</td>
+                                                <td className="py-2 px-3 text-center">
+                                                    <button onClick={() => deleteRecord(record.id)} className="text-slate-400 hover:text-rose-600 p-1"><TrashIcon /></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* 底部使用指引 */}
+                    <section className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900/95 flex items-start gap-2">
+                        <InfoIcon />
+                        <div className="space-y-1">
+                            <span className="font-bold text-blue-950">老師的操作秘笈：</span>
+                            <p>1. <strong>快速批改全班</strong>：如果大部分學生表現完美，您可以先在學生學號下方點擊「<strong>全對</strong>」，系統會瞬間將該學生的 10 個項目全部填為 1 分（即 10分滿分），您再針對個別失误手動改成 0 分即可！</p>
+                            <p>2. <strong>直觀易用</strong>：每完成 5 位學生的實驗，直接點擊「<strong>儲存本組</strong>」儲存到下方列表，網格會自動重設，方便您立即對下 5 位學生進行評分。</p>
+                        </div>
+                    </section>
+
+                </div>
+            );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
